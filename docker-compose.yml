@@ -1,0 +1,22 @@
+version: "2"
+
+services:  
+
+    samba-ad-dc:
+        build: 
+            context: ./
+            dockerfile: Dockerfile
+        container_name: samba-ad-dc
+        environment:
+            # uncomment to change defaults
+            #- SAMBA_REALM=SAMDOM.EXAMPLE.COM
+            #- SAMBA_DOMAIN=SAMDOM
+            # adapt pwds
+            - ROOT_PASSWORD=Passw0rd
+            - SAMBA_ADMIN_PASSWORD=Passw0rd
+        # uncomment to mount volume            
+        #volumes:            
+        #    - ./samba:/var/lib/samba
+        dns: 127.0.0.1
+        privileged: true
+         
