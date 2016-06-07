@@ -1,0 +1,70 @@
+version: "2"
+
+services:
+
+  alfresco:
+    image: rsippl/alfresco:5.1-201604
+    ports:
+    - 8080:8080
+    container_name: alfresco
+    environment:
+    - DB_KIND=mysql
+    - DB_HOST=mysql
+    - DB_PASSWORD=T0p$$ecret
+    - CONTENT_STORE=/mnt/data
+    - LDAP_ENABLED=true
+    - LDAP_KIND=ldap-ad
+    - LDAP_AUTH_USERNAMEFORMAT=%s@samdom.example.com
+    - LDAP_URL=ldap://samba:389
+    - LDAP_SECURITY_PRINCIPAL=gogo@samdom.example.com
+    - LDAP_SECURITY_CREDENTIALS=ia4uV1EeKait
+    - LDAP_GROUP_SEARCHBASE=cn\\=Users,dc\\=samdom,dc\\=example,dc\\=com
+    - LDAP_USER_SEARCHBASE=cn\\=Users,dc\\=samdom,dc\\=example,dc\\=com
+    - AMP_DIR_SHARE=/amps/share
+    depends_on:
+    - mysql
+    - samba
+
+  mysql:
+    image: mysql:5.6.30
+    container_name: mysql
+    hostname: mysql
+    # Ports not needed because we link the containers
+    #ports:
+    # - 3306:3306
+    environment:
+    - MYSQL_ROOT_PASSWORD=T0p$$ecret
+    - MYSQL_DATABASE=alfresco
+    - MYSQL_USER=alfresco
+    - MYSQL_PASSWORD=T0p$$ecret
+    command: --character-set-server=utf8 --collation-server=utf8_general_ci --max_connections=1024
+
+  samba:
+    build: 
+      context: ./..
+      dockerfile: Dockerfile
+    # Ports not needed because we link the containers
+    #ports:
+    #   - 53:53
+    #   - 53:53/udp
+    #   - 88:88
+    #   - 88:88/udp
+    #   - 135:135
+    #   - 137-138:137-138/udp
+    #   - 139:139
+    #   - 389:389
+    #   - 389:389/udp
+    #   - 445:445
+    #   - 464:464
+    #   - 464:464/udp
+    #   - 636:636
+    #   - 1024-1044:1024-1044
+    #   - 3268-3269:3268-3269
+    container_name: samba
+    environment:
+      - SAMBA_DOMAIN=SAMDOM
+      - SAMBA_REALM=SAMDOM.EXAMPLE.COM
+      - ROOT_PASSWORD=T0p$$ecret
+      - SAMBA_ADMIN_PASSWORD=T0p$$ecret
+      - LDAP_ALLOW_INSECURE=true
+    dns: 127.0.0.1

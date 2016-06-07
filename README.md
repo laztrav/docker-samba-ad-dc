@@ -43,6 +43,14 @@ ldapsearch -b "DC=samdom,DC=example,DC=com" "(&(objectClass=user)(name=administr
 
 Edit [custom.sh](custom.sh) to add custom logic executed at the and of supervisord. 
 
+## Allow Insecure LDAP Authentication
+
+Simple auth via LDAP fails if you have an unencrypted connection ("BindSimple: Transport encryption required").
+
+For debugging purposes, you can avoid this error by setting the LDAP_ALLOW_INSECURE environment variable to true.
+
+DO NOT USE LDAP_ALLOW_INSECURE IN PRODUCTION!
+
 ## Redmine client
 
 Now you can test Redmine ldap login to the host.
@@ -84,6 +92,26 @@ Now log out and log in with the samba administrator credentials (username: admin
 I used [JXplorer](http://jxplorer.org/) to explore the LDAP-schema. To log in you need to input something like this:
 ![JXplorer example](http://i.imgur.com/LniIp22.png)
 
+## Samba as User Database for Alfresco
+
+For an example on how to use Samba as LDAP server with Alfresco, see the provided docker-compose file:
+
+```
+cd compose && \
+docker-compose build && \
+docker-compose up
+```
+
+Watch the Alfresco log:
+
+```
+docker exec -it alfresco bash
+tail -f /alfresco/tomcat/logs/catalina.out
+```
+
+Once Alfresco is up and running, you can log in at port 8080 as admin/admin or as one of the users created in
+the custom.sh file.
+
 ## Testing UNIX login with sssd
 
 ```
@@ -104,7 +132,7 @@ Port usage: https://wiki.samba.org/index.php/Samba_port_usage
 ## Port forwarding command
 If you want the DC to be reachable through the host's IP you can start the container with this command:
 ```
-docker run --privileged -p 53:53 -p 53:53/udp -p 88:88 -p 88:88/udp -p 135:135 -p 137:137/udp -p 138:138/udp -p 139:139 -p 389:389 -p 389:389/udp -p 445:445 -p 464:464 -p 464:464/udp -p 636:636 -p 3268:3268 -p 3269:3269 -p 1024:1024 -p 1025:1025 -p 1026:1026 -p 1027:1027 -p 1028:1028 -p 1029:1029 -p 1030:1030 -p 1031:1031 -p 1032:1032 -p 1033:1033 -p 1034:1034 -p 1035:1035 -p 1036:1036 -p 1037:1037 -p 1038:1038 -p 1039:1039 -p 1040:1040 -p 1041:1041 -p 1042:1042 -p 1043:1043 -p 1044:1044 -v ${HOME}/dockervolumes/samba:/var/lib/samba  -e "SAMBA_DOMAIN=samdom" -e "SAMBA_REALM=samdom.example.com" -e "SAMBA_HOST_IP=$(hostname --all-ip-addresses |cut -f 1 -d' ')" --name samdom --dns 127.0.0.1 -d samba-ad-dc
+docker run --privileged -p 53:53 -p 53:53/udp -p 88:88 -p 88:88/udp -p 135:135 -p 137-138:137-138/udp -p 139:139 -p 389:389 -p 389:389/udp -p 445:445 -p 464:464 -p 464:464/udp -p 636:636 -p 1024-1044:1024-1044 -p 3268-3269:3268-3269 -v ${HOME}/dockervolumes/samba:/var/lib/samba  -e "SAMBA_DOMAIN=samdom" -e "SAMBA_REALM=samdom.example.com" -e "SAMBA_HOST_IP=$(hostname --all-ip-addresses |cut -f 1 -d' ')" --name samdom --dns 127.0.0.1 -d samba-ad-dc
 ```
 
 The problem is that the port range 1024 and upwards are used for dynamic RPC-calls, luckily Samba goes through them in

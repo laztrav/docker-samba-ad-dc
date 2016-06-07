@@ -4,6 +4,7 @@ set -e
 
 SAMBA_DOMAIN=${SAMBA_DOMAIN:-SAMDOM}
 SAMBA_REALM=${SAMBA_REALM:-SAMDOM.EXAMPLE.COM}
+LDAP_ALLOW_INSECURE=${LDAP_ALLOW_INSECURE:-false}
 
 if [[ $SAMBA_HOST_IP ]]; then
     SAMBA_HOST_IP="--host-ip=${SAMBA_HOST_IP}"
@@ -27,6 +28,12 @@ appSetup () {
     samba-tool domain provision --use-rfc2307 --domain=$SAMBA_DOMAIN --realm=$SAMBA_REALM --server-role=dc\
       --dns-backend=BIND9_DLZ --adminpass=$SAMBA_ADMIN_PASSWORD $SAMBA_HOST_IP
     cp /var/lib/samba/private/krb5.conf /etc/krb5.conf
+    if [ "${LDAP_ALLOW_INSECURE,,}" == "true" ]; then
+	  sed -i "/\[global\]/a \
+	    \\\t\# enable unencrypted passwords\n\
+    	ldap server require strong auth = no\
+    	" /etc/samba/smb.conf
+	fi
     # Create Kerberos database
     expect kdb5_util_create.expect
     # Export kerberos keytab for use with sssd
